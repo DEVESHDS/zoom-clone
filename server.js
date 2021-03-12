@@ -23,8 +23,14 @@ app.get("/:room", (req, res) => {
 
 io.on("connection", (socket) => {
   socket.on("join-room", (roomId, userId) => {
+    console.log("socket server established");
     socket.join(roomId);
+    console.log("room joined ", roomId);
     socket.to(roomId).broadcast.emit("user-connected", userId);
+    console.log("video stream can now be broadcasted");
+    // socket.on("message", (message) => {
+    //   io.to(roomId).emit("createmessage", message);
+    // });
   });
 });
 
