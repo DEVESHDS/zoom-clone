@@ -9,7 +9,7 @@ var peer = new Peer(undefined, {
   port: 3030,
 });
 
-let myVideStream;
+let myVideoStream;
 
 navigator.mediaDevices
   .getUserMedia({
@@ -17,12 +17,11 @@ navigator.mediaDevices
     audio: true,
   })
   .then((stream) => {
-    myVideStream = stream;
+    myVideoStream = stream;
     addVideoStream(myVideo, stream);
 
     peer.on("call", (call) => {
       call.answer(stream);
-      console.log("peer call answered");
       const video = document.createElement("video");
       call.on("stream", (userVideoStream) => {
         addVideoStream(video, userVideoStream);
@@ -30,52 +29,40 @@ navigator.mediaDevices
     });
 
     socket.on("user-connected", (userId) => {
-      console.log("user connected emit heard");
       connectToNewUser(userId, stream);
     });
-    // let text = $("input");
-    // // console.log(text);
+    let text = $("input");
 
-    // $("html").keydown((e) => {
-    //   if (e.which == 13 && text.val().length !== 0) {
-    //     console.log(text.val());
-    //     socket.emit("message", text.val());
-    //     text.val("");
-    //   }
-    // });
+    $("html").keydown((e) => {
+      if (e.which == 13 && text.val().length !== 0) {
+        socket.emit("message", text.val());
+        text.val("");
+      }
+    });
 
-    // socket.on("createmessage", (message) => {
-    //   // console.log("Message received from server", message);
-    //   const ul = document.getElementById("abcd");
-    //   // console.log("value of ul is ", ul);
-    //   const li = document.createElement("Li");
-    //   li.innerHTML = `<b>user</b><br/>${message}`;
-    //   li.className = "message";
-    //   // console.log("value of li is ", li);
-    //   ul.append(li);
-    //   scrollToBottom();
-    // });
+    socket.on("createmessage", (message) => {
+      const ul = document.getElementById("abcd");
+      const li = document.createElement("Li");
+      li.innerHTML = `<b>user</b><br/>${message}`;
+      li.className = "message";
+      ul.append(li);
+      scrollToBottom();
+    });
   });
 
 peer.on("open", (id) => {
-  console.log("peer connection openend");
   socket.emit("join-room", ROOM_ID, id);
 });
 
 const connectToNewUser = (userId, stream) => {
-  console.log("new user connected");
   const call = peer.call(userId, stream);
-  console.log("call using peerjs");
   const video = document.createElement("video");
-  console.log("creating video element");
   call.on("stream", (userVideoStream) => {
-    console.log("adding user's stream");
     addVideoStream(video, userVideoStream);
   });
 };
 
 const addVideoStream = (video, stream) => {
-  console.log("inside add video stream");
   video.srcObject = stream;
   video.addEventListener("loadedmetadata", () => {
     video.play();
@@ -86,4 +73,30 @@ const addVideoStream = (video, stream) => {
 const scrollToBottom = () => {
   let d = $(".main__chat__window");
   d.scrollTop(d.prop("scrollHeight"));
+};
+
+const muteUnmute = () => {
+  console.log(myVideoStream);
+  const enabled = myVideoStream.getAudioTracks()[0].enabled;
+  if (enabled) {
+    myVideoStream.getAudioTracks()[0].enabled = false;
+    setUnmuteButton();
+  } else {
+    myVideoStream.getAudioTracks()[0].enabled = true;
+    setMuteButton();
+  }
+};
+
+const setMuteButton = () => {
+  const html = `<i class="fas fa-microphone"></i>
+              <span>Mute</span>`;
+
+  document.querySelector(".main__mute__button").innerHTML = html;
+};
+
+const setUnmuteButton = () => {
+  const html = `<i class="unmute fas fa-microphone-slash"></i>
+  <span>Unmute</span>`;
+
+  document.querySelector(".main__mute__button").innerHTML = html;
 };
